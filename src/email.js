@@ -1,7 +1,7 @@
 const nodemailer = require('nodemailer');
 
 // Create transporter with SES SMTP config
-const transporter = nodemailer.createTransporter({
+const transporter = nodemailer.createTransport({
   host: process.env.SES_SMTP_HOST,
   port: parseInt(process.env.SES_SMTP_PORT, 10),
   secure: process.env.SES_SMTP_PORT === '465', // true for 465, false for other ports
