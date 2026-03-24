@@ -11,6 +11,7 @@ A standalone authentication service with magic link email authentication and JWT
 - AWS SES integration for sending emails
 - CORS support for multiple origins
 - RESTful API design
+- Admin interface for user management
 
 ## Tech Stack
 
@@ -29,6 +30,8 @@ Create a `.env` file based on `.env.example` with the following variables:
 |----------|-------------|---------|
 | `DATABASE_URL` | PostgreSQL connection string | `postgres://user:pass@host/dbname` |
 | `JWT_SECRET` | Secret key for signing JWTs | Random 32+ character string |
+| `ADMIN_PASSWORD` | Password for admin panel access | Strong password |
+| `ADMIN_SECRET` | Secret for signing admin cookies | Random 32+ character string |
 | `AUTH_BASE_URL` | Base URL of this auth service | `https://auth.terryheath.com` |
 | `APP_NAME` | Application name shown in emails | `Small Things` |
 | `SES_SMTP_HOST` | AWS SES SMTP endpoint | `email-smtp.us-east-1.amazonaws.com` |
@@ -197,6 +200,75 @@ Health check endpoint.
   "service": "auth"
 }
 ```
+
+## Admin Interface
+
+The service includes a minimal admin interface for managing users and sessions. Access is protected by the `ADMIN_PASSWORD` environment variable.
+
+### Admin Authentication
+
+Admin sessions use HMAC-SHA256 signed cookies with 24-hour expiry. The cookie is:
+- Named `admin_session`
+- httpOnly, secure (in production), sameSite=strict
+- Signed with `ADMIN_SECRET` environment variable
+- Contains timestamp and random value for uniqueness
+
+### Admin Endpoints
+
+#### GET /admin/login
+
+Shows the admin login form.
+
+#### POST /admin/login
+
+Authenticates admin with password.
+
+**Request:**
+- Form field: `password`
+
+**Response:**
+- Success: Redirects to `/admin` with session cookie
+- Failure: Shows login form with error
+
+#### GET /admin
+
+Lists all users in the system (requires admin session).
+
+**Features:**
+- Shows email, created_at, last_login for each user
+- Provides delete button for each user
+- Links to individual user details
+
+#### GET /admin/users/:id
+
+Shows details for a specific user (requires admin session).
+
+**Features:**
+- User information (email, ID, timestamps)
+- List of all refresh tokens (active, expired, revoked)
+- "Revoke All Sessions" button to invalidate all active tokens
+
+#### POST /admin/users/:id/delete
+
+Deletes a user and all associated data (requires admin session).
+
+**Effects:**
+- Removes user record
+- Cascades to delete all magic links and refresh tokens
+- Redirects to `/admin`
+
+#### POST /admin/users/:id/revoke-all
+
+Revokes all active refresh tokens for a user (requires admin session).
+
+**Effects:**
+- Marks all non-revoked refresh tokens as revoked
+- User will need to re-authenticate
+- Redirects back to user details page
+
+#### GET /admin/logout
+
+Clears admin session cookie and redirects to login.
 
 ## Database Schema
 

@@ -3,7 +3,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
-const { authenticate } = require('./middleware');
+const { authenticate, authenticateAdmin } = require('./middleware');
 const {
   requestMagicLink,
   verifyMagicLink,
@@ -11,6 +11,15 @@ const {
   logout,
   getCurrentUser
 } = require('./auth');
+const {
+  showLoginForm,
+  handleLogin,
+  handleLogout,
+  listUsers,
+  showUser,
+  deleteUser,
+  revokeAllSessions
+} = require('./admin');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -37,6 +46,7 @@ app.use(cors({
 
 // Middleware
 app.use(express.json());
+app.use(express.urlencoded({ extended: true })); // For form submissions
 app.use(cookieParser());
 
 // Health check endpoint
@@ -50,6 +60,15 @@ app.get('/auth/verify', verifyMagicLink);
 app.post('/auth/refresh', refreshAccessToken);
 app.post('/auth/logout', logout);
 app.get('/auth/me', authenticate, getCurrentUser);
+
+// Admin routes
+app.get('/admin/login', showLoginForm);
+app.post('/admin/login', handleLogin);
+app.get('/admin/logout', handleLogout);
+app.get('/admin', authenticateAdmin, listUsers);
+app.get('/admin/users/:id', authenticateAdmin, showUser);
+app.post('/admin/users/:id/delete', authenticateAdmin, deleteUser);
+app.post('/admin/users/:id/revoke-all', authenticateAdmin, revokeAllSessions);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
