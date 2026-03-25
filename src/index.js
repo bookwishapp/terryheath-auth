@@ -30,8 +30,8 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
   : ['http://localhost:3000'];
 
-// CORS configuration
-app.use(cors({
+// Create CORS middleware for auth routes only
+const corsMiddleware = cors({
   origin: function(origin, callback) {
     // Allow requests with no origin (e.g., mobile apps, Postman)
     if (!origin) return callback(null, true);
@@ -43,9 +43,9 @@ app.use(cors({
     }
   },
   credentials: true // Allow cookies to be sent cross-origin
-}));
+});
 
-// Middleware
+// Global middleware (no CORS here - admin routes don't need it)
 app.use(express.json());
 app.use(express.urlencoded({ extended: true })); // For form submissions
 app.use(cookieParser());
@@ -55,14 +55,14 @@ app.get('/health', (req, res) => {
   res.json({ status: 'healthy', service: 'auth' });
 });
 
-// Auth routes
-app.post('/auth/request', requestMagicLink);
-app.get('/auth/verify', verifyMagicLink);
-app.post('/auth/refresh', refreshAccessToken);
-app.post('/auth/logout', logout);
-app.get('/auth/me', authenticate, getCurrentUser);
+// Auth routes (with CORS for cross-origin access)
+app.post('/auth/request', corsMiddleware, requestMagicLink);
+app.get('/auth/verify', corsMiddleware, verifyMagicLink);
+app.post('/auth/refresh', corsMiddleware, refreshAccessToken);
+app.post('/auth/logout', corsMiddleware, logout);
+app.get('/auth/me', corsMiddleware, authenticate, getCurrentUser);
 
-// Admin routes
+// Admin routes (no CORS - same-origin requests only)
 app.get('/admin/login', showLoginForm);
 app.post('/admin/login', handleLogin);
 app.get('/admin/logout', handleLogout);
