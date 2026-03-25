@@ -125,8 +125,8 @@ function htmlTemplate(title, content) {
   `;
 }
 
-// GET /admin/login - Show login form
-function showLoginForm(req, res, error = null) {
+// Helper function to render login form with optional error
+function renderLoginForm(res, error = null) {
   const content = `
     <div class="login-form">
       <h1>Admin Login</h1>
@@ -143,12 +143,17 @@ function showLoginForm(req, res, error = null) {
   res.send(htmlTemplate('Admin Login', content));
 }
 
+// GET /admin/login - Show login form
+function showLoginForm(req, res) {
+  renderLoginForm(res);
+}
+
 // POST /admin/login - Handle login
 async function handleLogin(req, res) {
   const { password } = req.body;
 
   if (!password || !checkAdminPassword(password)) {
-    return showLoginForm(req, res, 'Invalid password');
+    return renderLoginForm(res, 'Invalid password');
   }
 
   // Generate and set admin cookie
