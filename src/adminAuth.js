@@ -1,7 +1,15 @@
 const crypto = require('crypto');
 
+// Check if admin features are configured
+function isAdminConfigured() {
+  return !!(process.env.ADMIN_PASSWORD && process.env.ADMIN_SECRET);
+}
+
 // Generate a signed admin session token
 function generateAdminToken() {
+  if (!process.env.ADMIN_SECRET) {
+    throw new Error('ADMIN_SECRET environment variable is not configured');
+  }
   const timestamp = Date.now().toString();
   const random = crypto.randomBytes(16).toString('hex');
   const payload = `${timestamp}.${random}`;
@@ -16,7 +24,7 @@ function generateAdminToken() {
 
 // Verify an admin session token
 function verifyAdminToken(token) {
-  if (!token) return false;
+  if (!token || !process.env.ADMIN_SECRET) return false;
 
   const parts = token.split('.');
   if (parts.length !== 3) return false;
@@ -48,10 +56,14 @@ function verifyAdminToken(token) {
 
 // Check admin password
 function checkAdminPassword(password) {
+  if (!process.env.ADMIN_PASSWORD) {
+    return false;
+  }
   return password === process.env.ADMIN_PASSWORD;
 }
 
 module.exports = {
+  isAdminConfigured,
   generateAdminToken,
   verifyAdminToken,
   checkAdminPassword

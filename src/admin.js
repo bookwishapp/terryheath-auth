@@ -1,5 +1,5 @@
 const pool = require('./db');
-const { generateAdminToken, checkAdminPassword } = require('./adminAuth');
+const { isAdminConfigured, generateAdminToken, checkAdminPassword } = require('./adminAuth');
 
 // Base HTML template
 function htmlTemplate(title, content) {
@@ -145,11 +145,28 @@ function renderLoginForm(res, error = null) {
 
 // GET /admin/login - Show login form
 function showLoginForm(req, res) {
+  if (!isAdminConfigured()) {
+    return res.status(503).send(htmlTemplate('Admin Not Configured', `
+      <div style="text-align: center; padding: 50px;">
+        <h1>Admin Panel Not Configured</h1>
+        <p style="margin-top: 20px;">The admin panel requires the following environment variables to be set:</p>
+        <ul style="list-style: none; margin-top: 20px;">
+          <li><code>ADMIN_PASSWORD</code></li>
+          <li><code>ADMIN_SECRET</code></li>
+        </ul>
+        <p style="margin-top: 20px;">Please configure these in your deployment environment.</p>
+      </div>
+    `));
+  }
   renderLoginForm(res);
 }
 
 // POST /admin/login - Handle login
 async function handleLogin(req, res) {
+  if (!isAdminConfigured()) {
+    return res.status(503).json({ error: 'Admin panel not configured. ADMIN_PASSWORD and ADMIN_SECRET environment variables are required.' });
+  }
+
   const { password } = req.body;
 
   if (!password || !checkAdminPassword(password)) {

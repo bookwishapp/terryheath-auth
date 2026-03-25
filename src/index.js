@@ -20,6 +20,7 @@ const {
   deleteUser,
   revokeAllSessions
 } = require('./admin');
+const { isAdminConfigured } = require('./adminAuth');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -81,4 +82,11 @@ app.listen(PORT, () => {
   console.log(`Auth service running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`Allowed origins: ${allowedOrigins.join(', ')}`);
+
+  // Check admin configuration
+  if (!isAdminConfigured()) {
+    console.warn('⚠️  Admin panel is NOT configured. Set ADMIN_PASSWORD and ADMIN_SECRET to enable.');
+  } else {
+    console.log('✓ Admin panel is configured and available at /admin');
+  }
 });
